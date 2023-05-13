@@ -1,0 +1,142 @@
+-- RL's
+-- Based on Fowler's UML Distilled chapter 3 example
+
+model CustomerOrders
+
+class Customer
+  attributes
+    name : String init : 'Jeff Bezos'
+  operations
+    getCreditRating() : String = 'poor'
+end
+
+class CorporateCustomer < Customer
+  attributes
+    contactName : String
+	creditRating : String
+	creditLimit : Integer
+  operations
+    getCreditRating() : String
+    begin
+        result:= self.creditRating
+    end 
+    
+end
+
+class PersonalCustomer < Customer
+  attributes
+    creditCarNum : String
+  operations
+    
+end
+
+
+class Order
+  attributes
+    isPrepaid : Boolean init : false
+    number : String
+    price : Real  init : 0
+  operations
+    addLineItem( quantity : Integer, p : Product)
+    begin
+        declare lineItem : OrderLine;
+        lineItem := new OrderLine;
+        insert(self,lineItem) into Contains; 
+        
+        -- Refactor code here to reduce coupling and improve cohesion
+        -- lineItem.quantity := quantity;
+        -- p.stockLevel := p.stockLevel - quantity;
+        -- insert (lineItem, p) into HasProduct              
+        
+        lineItem.processOrderLine(quantity, p);                      
+    end
+    
+	calculatePrice() : Real
+    begin
+        declare item : OrderLine, price : Real;
+        
+        self.price := 0;
+        for item in self.lineItems do
+            -- extensive refactoring here
+            -- responsibilty devolved to OrderLine object
+            price :=  item.getPrice();
+            self.price := self.price + price
+        end;
+        result:= self.price                   
+    end
+    
+    
+end
+                                                              
+class OrderLine
+  attributes
+    price : Real  init : 0
+    quantity : Integer
+  operations
+    getPrice() : Real
+    begin
+        self.price := self.product.getPrice(self.quantity);
+        result := self.price
+    end
+    
+    processOrderLine(q : Integer, p : Product)
+    begin
+        p.updateStock(q);
+        self.quantity := q;
+        insert(self, p) into HasProduct
+    end    
+end
+
+class Product
+  attributes
+    name : String
+	price : Real
+    stockLevel : Integer init : 8
+    
+  operations
+    getPrice(q : Integer) : Real
+    begin
+        declare price : Real;
+        price := q * self.price;
+        if q >= 3 then
+            result := price * 0.9
+        else
+            result := price
+        end
+    end
+    
+    updateStock(q : Integer)
+    begin
+        self.stockLevel := self.stockLevel - q
+    end
+end
+
+association Contains between
+  Order[1] 
+  OrderLine[1..*] role lineItems
+end
+
+association HasOrdered between
+  Customer[1]
+  Order[*] role orders
+end
+
+association HasProduct between
+  OrderLine[*] role orderLines
+  Product[1] 
+end
+  
+
+constraints
+
+context Order
+    inv: self.customer.getCreditRating() = 'poor' implies self.isPrepaid
+
+context Product::updateStock(q : Integer)
+        pre: self.stockLevel >= q       
+        post: self.stockLevel = self.stockLevel@pre - q
+        
+  
+	
+    
+    

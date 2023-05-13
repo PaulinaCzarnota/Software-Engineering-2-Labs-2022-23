@@ -1,0 +1,69 @@
+
+-- Example illustrating pre- and postconditions for use 
+-- with !openter and !opexit
+
+model Employee
+
+-- classes
+
+class Person
+attributes
+  name : String
+  age : Integer
+  Income : Real
+operations
+    calculateIncome() : Real
+end
+
+class Contract
+  attributes
+    title : String
+    salary : Real
+  operations
+    raiseSalary(rate : Real) : Real
+    
+end
+
+class Company
+attributes
+  name : String
+  location : String
+operations
+  hire(p : Person, t : String, s : Real)
+    begin
+        declare c : Contract;
+        c := new Contract;
+        c.title := t;
+        c.salary := s;
+        insert (c,self) into isAt;
+        insert(p, c) into WorksOn
+    end       
+  fire(p : Person)
+end
+
+-- associations
+
+association WorksOn between
+    Person[1] role person
+    Contract[*] role jobs
+end
+
+
+association isAt between
+    Contract[*] role contracts
+    Company[1] role employer
+end
+ 
+
+-- constraints
+
+constraints
+
+context Company::hire(p: Person, t : String, s : Real)
+  pre hirePre1 : p.isDefined()
+  pre minSal: s >= 20000
+  pre notAlreadyAnEmployee: contracts.person->excludes(p)
+
+  post nowAnEmployee: contracts.person->includes(p)
+  post correctSal:
+    contracts->forAll(c | c.person = p implies c.salary = s)

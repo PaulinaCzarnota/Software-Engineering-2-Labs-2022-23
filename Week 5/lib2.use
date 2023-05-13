@@ -1,0 +1,79 @@
+model Library
+
+class Book
+  attributes
+    title : String
+    author : String
+    no_copies : Integer
+    no_onshelf : Integer
+  operations
+    borrow()
+    begin
+        self.no_onshelf := self.no_onshelf - 1
+    end
+    pre copiesOnShelf: no_copies > 0
+    post: no_onshelf = no_onshelf@pre - 1
+end
+
+class Copy
+  attributes
+    status : String
+  operations
+    borrow( m : Member)
+    begin
+        self.status := 'onLoan';
+        self.book.borrow()
+    end
+    pre status: self.status = 'onShelf'
+    
+end    
+    
+class Member 
+  attributes 
+    name : String
+    address : String
+    no_onloan : Integer
+    status : String
+    fine : Integer
+  operations
+    okToBorrow() : Boolean 
+    begin
+      if (self.no_onloan < 2) then
+        result := true
+      else 
+        result := false
+      end
+    end
+    
+
+    borrow(c : Copy)
+    begin
+        declare ok : Boolean;
+        ok := self.okToBorrow();
+        if( ok ) then
+            insert (self, c) into HasBorrowed;
+            self.no_onloan := self.no_onloan + 1;
+            c.borrow(self)
+        end
+    end           
+end    
+
+association HasBorrowed between
+    Member[0..1] role borrower
+    Copy[*] role borrowed
+end
+
+association CopyOf between
+    Copy[1..*] role copies
+    Book[1] role book
+end
+  
+constraints
+
+context Member::borrow(c:Copy) 
+    pre limit: self.no_onloan < 2
+    pre cond1: self.borrowed->excludes(c)
+    post cond2: self.borrowed->includes(c)
+    
+    
+    

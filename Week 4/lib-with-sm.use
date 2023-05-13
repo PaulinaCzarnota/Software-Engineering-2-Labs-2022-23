@@ -1,0 +1,43 @@
+model Library
+-- reduced version showing how to use state machines for Book class
+
+enum BookStatus { available, unavailable, onreserve}
+
+class Book
+    attributes
+        title : String
+        author : String
+        status : BookStatus init = #available
+        no_copies : Integer init = 2
+        no_onshelf : Integer init = 2
+  
+    operations
+        borrow()
+        begin
+            self.no_onshelf := self.no_onshelf - 1;
+            if (self.no_onshelf = 0) then 
+                self.status := #unavailable 
+            end
+        end      
+        
+        return() begin
+            self.no_onshelf := self.no_onshelf + 1;
+            self.status := #available
+        end 
+        post: no_onshelf = no_onshelf@pre + 1
+    
+    statemachines
+        psm States
+        states                        
+            newTitle : initial
+            available       [no_onshelf > 0]
+            unavailable     [no_onshelf = 0]
+        transitions
+            newTitle ->  available  { create }
+            available -> unavailable { [no_onshelf = 1] borrow() }
+            available -> available { [no_onshelf > 1] borrow() }
+            available -> available { return() }
+            unavailable -> available { return() }
+        end
+end
+

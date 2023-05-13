@@ -1,0 +1,92 @@
+
+-- Example illustrating pre- and postconditions for use 
+-- with !openter and !opexit
+
+model Employee
+
+-- classes
+
+class Person
+attributes
+  name : String
+  age : Integer
+  salary : Real
+operations
+  calcIncome()
+end
+
+
+class Company
+attributes
+  name : String
+  location : String
+operations
+  hire(p : Person, t : String, s : Real)
+  begin
+    declare newContract : Contract; 
+    newContract := new Contract;
+    newContract.title := t;
+    newContract.salary := s;
+    p.salary := s;
+    insert(p, newContract) into WorksOn;
+    insert(newContract, self) into IsAt;
+  end
+  fire(p : Person)
+  begin
+    declare contract:Contract, c:Contract;
+    for contract in self.contracts do
+        if contract.employee = p then
+            c := contract;
+        end
+    end;
+    delete(p, c) from WorksOn;
+    delete(c, self) from IsAt;
+    destroy(c);
+    p.salary := 0;
+  end
+end
+
+class Contract
+attributes
+  title : String
+  salary : Real
+operations
+  raiseSalary(p : Person, rate : Real) : Real
+end
+
+-- associations
+
+association WorksOn between
+  Person[1] role employee
+  Contract[*] role contracts
+end
+
+association IsAt between
+  Contract[1..*] role contracts
+  Company[1] role employer
+end
+
+-- constraints
+
+constraints
+
+context Contract::raiseSalary(p: Person, rate : Real) : Real
+  pre raisePre1: p.age >= 21
+  post raiseSalaryPost: 
+    p.salary = p.salary@pre * (1.0 + rate)
+  post resultPost:
+    result = p.salary
+
+context Company::hire(p : Person, t : String, s : Real)
+  pre  hirePre1: p.isDefined()
+  pre  notAlreadyAnEmployee: contracts.employee->excludes(p)
+  pre  minSal: s >= 20000
+  post nowAnEmployee: contracts.employee->includes(p)
+  post correctSal:
+    contracts->forAll(c | c.employee = p implies c.salary = s)
+
+context Company::fire(p : Person)
+  pre  firePre1: p.isDefined()
+  pre  firePre3: contracts.employee->includes(p)
+  post firePost1: contracts.employee->excludes(p)
+  post firePost2: p.salary = 0
