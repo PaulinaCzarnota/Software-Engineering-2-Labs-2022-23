@@ -1,4 +1,8 @@
-This is a collection of my Software Engineering 2 labs completed in the second year of Computer Science at TU Dublin. Each lab utilizes the USE tool for modeling and SOIL (Structured Object-oriented Interaction Language) for specifying UML (Unified Modeling Language) diagrams.
+This is a collection of my Software Engineering 2 labs completed in the second year of Computer Science at TU Dublin. 
+
+Each lab utilizes the USE tool for modeling and SOIL (Structured Object-oriented Interaction Language) for specifying UML (Unified Modeling Language) diagrams.
+
+# Lab Summaries
 
 ### Lab 1: Order Distributed System
 This lab implements a customer order management system using UML concepts in USE and SOIL, showcasing classes for `Customer`, `Order`, and `Product` to manage customer orders and credit ratings.
